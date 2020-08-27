@@ -13,7 +13,8 @@ export class Tree extends React.Component {
             showPopup: false,
             exprResult: null,
             exprPaths: null,
-            childernNodes: { parentNode: {}, childern: [] }
+            childernNodes: { parentNode: {}, childern: [] },
+            expandedList: []
         }
         this.nodes = [];
         this.handleOnNodeClick = this.handleOnNodeClick.bind(this)
@@ -38,15 +39,17 @@ export class Tree extends React.Component {
                 }
                 else {
                     propertiesStr = '';
+                    let isExpanded = null;
                     let nodes = Object.keys(_node).map(_key => {
+                        isExpanded = (exprResult && exprPaths && this.isJSONPathMatchWithKey(_key));
                         if (Array.isArray(_node[_key]) || (typeof _node[_key] === 'object' && _node[_key].constructor === Object)) {
                             return (<><li Key={_key} ref={(ref) => this.nodes[_key] = ref}
-                                onClick={(event) => this.handleOnNodeClick(_node[_key], event)}>
-                                <span className="icon plus"></span>
+                                onClick={(event) => this.handleOnNodeClick(_node[_key], isExpanded, event)}>
+                                <span className={"icon plus" + (isExpanded ? " minus" : "")}></span>
                                 {_key}
                             </li>
                                 <ul>
-                                    {((exprResult, exprPaths) && this.isJSONPathMatchWithKey(_key)) && (this.renderTree(_node[_key]))}
+                                    {isExpanded && (this.renderTree(_node[_key]))}
                                 </ul></>)
                         }
                         else {
@@ -72,21 +75,25 @@ export class Tree extends React.Component {
             })
         }
         else if (typeof jsonData === 'object' && jsonData.constructor === Object) {
-            treeView = Object.keys(jsonData).map(_node => (<>
-                <li key={_node} ref={(ref) => this.nodes[_node] = ref}
-                    onClick={(event) => this.handleOnNodeClick(jsonData[_node], event)}>
-                    <span className="icon plus"></span>
-                    {_node}
-                </li>
-                <ul>
-                    {((exprResult, exprPaths) && this.isJSONPathMatchWithKey(_node)) && (this.renderTree(jsonData[_node]))}
-                </ul>
-            </>))
+            let isExpanded = null;
+            treeView = Object.keys(jsonData).map(_node => {
+                isExpanded = (exprResult && exprPaths && this.isJSONPathMatchWithKey(_node));
+                return (<>
+                    <li key={_node} ref={(ref) => this.nodes[_node] = ref}
+                        onClick={(event) => this.handleOnNodeClick(jsonData[_node], isExpanded, event)}>
+                        <span className={"icon plus" + (isExpanded ? " minus" : "")}></span>
+                        {_node}
+                    </li>
+                    <ul>
+                        {isExpanded && (this.renderTree(jsonData[_node]))}
+                    </ul>
+                </>)
+            })
         }
         return treeView;
     }
 
-    handleOnNodeClick(node, event) {
+    handleOnNodeClick(node, isExpanded, event) {
         if (event.currentTarget.firstElementChild.className.endsWith('minus')) {
             event.currentTarget.firstElementChild.className = event.currentTarget.firstElementChild.className.replace('minus', '');
         }
@@ -100,11 +107,12 @@ export class Tree extends React.Component {
         else {
             event.currentTarget.nextElementSibling.className = 'showChildern';
         }
-        let nodes = this.renderTree(node);
+        
         if (!event.currentTarget.firstElementChild.className.endsWith('minus')) {
-            ReactDOM.render(null, event.currentTarget.nextElementSibling);
+            ReactDOM.render(null, event.currentTarget.nextElementSibling);       
         }
         else {
+            let nodes = this.renderTree(node);
             ReactDOM.render(nodes, event.currentTarget.nextElementSibling);
         }
     }
@@ -160,7 +168,10 @@ export class Tree extends React.Component {
 
                             var response = JSONPath.query(this.props.json, event.target.value)
                             if (response && response.length > 0) {
-                                this.setState({ exprResult: response, exprPaths: paths })
+                                this.setState({
+                                    exprResult: response,
+                                    exprPaths: paths
+                                })
                             }
                             else {
                                 this.setState({ message: "No matchs for this expression", showPopup: true })

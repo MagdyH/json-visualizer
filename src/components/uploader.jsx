@@ -7,9 +7,9 @@ import uploadJsonActions from '../redux/actions/uploadJSON'
 export function Uploader(props) {
 
     return (
-            <div class="container-input">
+            <div className="container-input">
                 <div className='button-wrap'>
-                    <label className='new-button' for='upload'> Upload JSON file  </label>
+                    <label className='new-button' htmlFor='upload'> Upload JSON file  </label>
                     <input id='upload' style={{ marginTop: '25%' }} type="file" accept=".json" onChange={(e) => {
                         console.log(e.target.files[0]);
                         var file = e.target.files[0];
